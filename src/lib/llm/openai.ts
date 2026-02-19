@@ -101,7 +101,10 @@ export class OpenAIAdapter implements LLMAdapter {
 }
 
 /** Factory to get the right adapter */
-export function createLLMAdapter(provider?: string): LLMAdapter {
-    // All providers use OpenAI-compatible API
+export function createLLMAdapter(provider?: string, baseUrl?: string): LLMAdapter {
+    // All providers use OpenAI-compatible API, just different base URLs
+    if (baseUrl) {
+        return new OpenAIAdapter("", baseUrl);
+    }
     return new OpenAIAdapter();
 }

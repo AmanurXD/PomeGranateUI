@@ -6,11 +6,18 @@ import {
     ChevronDown,
     Share2,
     Download,
-    MoreHorizontal,
+    Radio,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
-const MODELS = [
+interface ModelOption {
+    id: string;
+    name: string;
+    provider: string;
+    badge?: string;
+}
+
+const BASE_MODELS: ModelOption[] = [
     { id: "gpt-4o", name: "GPT-4o", provider: "openai" },
     { id: "gpt-4o-mini", name: "GPT-4o mini", provider: "openai" },
     { id: "gpt-4-turbo", name: "GPT-4 Turbo", provider: "openai" },
@@ -27,6 +34,7 @@ export function ChatHeader() {
         activeConversationId,
         conversations,
         resetChat,
+        frpStatus,
     } = useChat();
     const [showModelMenu, setShowModelMenu] = useState(false);
     const modelRef = useRef<HTMLDivElement>(null);
@@ -34,7 +42,19 @@ export function ChatHeader() {
     const activeConversation = conversations.find(
         (c) => c.id === activeConversationId
     );
-    const currentModel = MODELS.find((m) => m.id === settings.defaultModel) || MODELS[0];
+
+    // Build models list including FRP if configured
+    const models: ModelOption[] = [...BASE_MODELS];
+    if (frpStatus.configured) {
+        models.push({
+            id: "frp-llm",
+            name: frpStatus.label || "FRP LLM",
+            provider: "frp",
+            badge: frpStatus.status,
+        });
+    }
+
+    const currentModel = models.find((m) => m.id === settings.defaultModel) || models[0];
 
     useEffect(() => {
         function handleClick(e: MouseEvent) {
@@ -85,20 +105,28 @@ export function ChatHeader() {
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:opacity-80"
                         style={{ color: "var(--text-primary)" }}
                     >
+                        {currentModel.id === "frp-llm" && (
+                            <Radio
+                                className="w-3.5 h-3.5"
+                                style={{
+                                    color: frpStatus.status === "connected" ? "#22c55e" : "#ef4444",
+                                }}
+                            />
+                        )}
                         {currentModel.name}
                         <ChevronDown className="w-3.5 h-3.5" style={{ color: "var(--text-tertiary)" }} />
                     </button>
 
                     {showModelMenu && (
                         <div
-                            className="absolute top-full left-0 mt-1 w-56 rounded-xl py-1.5 z-50 animate-fade-in"
+                            className="absolute top-full left-0 mt-1 w-64 rounded-xl py-1.5 z-50 animate-fade-in"
                             style={{
                                 background: "var(--bg-primary)",
                                 border: "1px solid var(--border-default)",
                                 boxShadow: "var(--shadow-lg)",
                             }}
                         >
-                            {MODELS.map((model) => (
+                            {models.map((model) => (
                                 <button
                                     key={model.id}
                                     onClick={() => {
@@ -110,8 +138,24 @@ export function ChatHeader() {
                                         color: model.id === settings.defaultModel ? "var(--accent)" : "var(--text-primary)",
                                         background: model.id === settings.defaultModel ? "var(--accent-light)" : "transparent",
                                     }}
+                                    disabled={model.id === "frp-llm" && frpStatus.status !== "connected"}
                                 >
-                                    <span>{model.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        {model.id === "frp-llm" && (
+                                            <span
+                                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                                style={{
+                                                    background:
+                                                        frpStatus.status === "connected"
+                                                            ? "#22c55e"
+                                                            : frpStatus.status === "pending"
+                                                                ? "#eab308"
+                                                                : "#ef4444",
+                                                }}
+                                            />
+                                        )}
+                                        <span>{model.name}</span>
+                                    </div>
                                     <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                                         {model.provider}
                                     </span>

@@ -32,4 +32,4 @@ export interface LLMAdapter {
     createEmbeddings(options: EmbeddingOptions): Promise<number[][]>;
 }
 
-export type LLMProvider = "openai" | "local";
+export type LLMProvider = "openai" | "local" | "frp";

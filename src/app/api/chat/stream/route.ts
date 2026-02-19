@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { createLLMAdapter } from "@/lib/llm/openai";
 import type { LLMMessage } from "@/lib/llm/adapter";
+import { getEndpoint } from "@/lib/frp/frp-manager";
 
 const streamSchema = z.object({
     conversationId: z.string().optional(),
@@ -105,8 +106,23 @@ export async function POST(request: Request) {
             data: { updatedAt: new Date() },
         });
 
-        // Stream response
-        const adapter = createLLMAdapter();
+        // Stream response — route to tunnel URL if model is frp-llm
+        let adapter;
+        let actualModel = model;
+
+        if (model === "frp-llm") {
+            const endpoint = await getEndpoint(session.user.id);
+            if (!endpoint || !endpoint.tunnelUrl || endpoint.status === "disconnected") {
+                return NextResponse.json(
+                    { error: "Remote LLM not connected. Go to Settings → paste your tunnel URL." },
+                    { status: 400 }
+                );
+            }
+            adapter = createLLMAdapter("frp", `${endpoint.tunnelUrl}/v1`);
+            actualModel = endpoint.modelName || "default";
+        } else {
+            adapter = createLLMAdapter();
+        }
         const encoder = new TextEncoder();
 
         const stream = new ReadableStream({
@@ -121,7 +137,7 @@ export async function POST(request: Request) {
 
                     for await (const token of adapter.generateStream({
                         messages: llmMessages,
-                        model,
+                        model: actualModel,
                         temperature,
                         maxTokens,
                     })) {

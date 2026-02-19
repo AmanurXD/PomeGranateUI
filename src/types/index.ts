@@ -88,3 +88,13 @@ export interface StreamPayload {
     enableRag?: boolean;
     topK?: number;
 }
+
+export interface FrpStatus {
+    configured: boolean;
+    status: "pending" | "connected" | "disconnected" | "not_configured";
+    label: string;
+    modelName: string;
+    tunnelUrl?: string;
+    lastSeenAt?: string | null;
+}
+

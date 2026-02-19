@@ -7,7 +7,7 @@ import {
     useCallback,
     ReactNode,
 } from "react";
-import type { ConversationItem, ChatMessage, UserSettings } from "@/types";
+import type { ConversationItem, ChatMessage, UserSettings, FrpStatus } from "@/types";
 
 interface ChatState {
     conversations: ConversationItem[];
@@ -19,6 +19,7 @@ interface ChatState {
     isSourcesPanelOpen: boolean;
     searchQuery: string;
     settings: UserSettings;
+    frpStatus: FrpStatus;
 }
 
 interface ChatContextType extends ChatState {
@@ -34,6 +35,7 @@ interface ChatContextType extends ChatState {
     setSourcesPanelOpen: (v: boolean) => void;
     setSearchQuery: (q: string) => void;
     setSettings: (s: Partial<UserSettings>) => void;
+    setFrpStatus: (s: Partial<FrpStatus>) => void;
     resetChat: () => void;
 }
 
@@ -43,6 +45,13 @@ const defaultSettings: UserSettings = {
     systemPrompt: "You are a helpful assistant.",
     temperature: 0.7,
     maxTokens: 4096,
+};
+
+const defaultFrpStatus: FrpStatus = {
+    configured: false,
+    status: "not_configured",
+    label: "FRP LLM",
+    modelName: "default",
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -57,6 +66,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const [isSourcesPanelOpen, setSourcesPanelOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [settings, setSettingsState] = useState<UserSettings>(defaultSettings);
+    const [frpStatus, setFrpStatusState] = useState<FrpStatus>(defaultFrpStatus);
 
     const addMessage = useCallback((msg: ChatMessage) => {
         setMessages((prev) => [...prev, msg]);
@@ -84,6 +94,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setSettingsState((prev) => ({ ...prev, ...s }));
     }, []);
 
+    const setFrpStatus = useCallback((s: Partial<FrpStatus>) => {
+        setFrpStatusState((prev) => ({ ...prev, ...s }));
+    }, []);
+
     return (
         <ChatContext.Provider
             value={{
@@ -96,6 +110,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 isSourcesPanelOpen,
                 searchQuery,
                 settings,
+                frpStatus,
                 setConversations,
                 setActiveConversationId,
                 setMessages,
@@ -108,6 +123,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setSourcesPanelOpen,
                 setSearchQuery,
                 setSettings,
+                setFrpStatus,
                 resetChat,
             }}
         >

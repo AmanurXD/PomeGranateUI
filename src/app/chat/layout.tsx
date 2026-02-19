@@ -7,7 +7,7 @@ import { useEffect, useCallback } from "react";
 import { useChat } from "@/components/chat/chat-store";
 
 function ChatLayoutInner({ children }: { children: React.ReactNode }) {
-    const { setConversations, toggleSidebar, setSettingsOpen, setSidebarOpen } = useChat();
+    const { setConversations, toggleSidebar, setSettingsOpen, setSidebarOpen, setFrpStatus, frpStatus } = useChat();
 
     // Load conversations
     useEffect(() => {
@@ -24,6 +24,45 @@ function ChatLayoutInner({ children }: { children: React.ReactNode }) {
         }
         load();
     }, [setConversations]);
+
+    // Load remote LLM status globally + auto-poll
+    useEffect(() => {
+        async function checkFrp() {
+            try {
+                const res = await fetch("/api/frp/status");
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.endpoint) {
+                        setFrpStatus({
+                            configured: true,
+                            status: data.status,
+                            label: data.endpoint.label,
+                            modelName: data.endpoint.modelName,
+                            tunnelUrl: data.endpoint.tunnelUrl,
+                            lastSeenAt: data.endpoint.lastSeenAt,
+                        });
+                    } else {
+                        setFrpStatus({
+                            configured: false,
+                            status: "not_configured",
+                            label: "Remote LLM",
+                            modelName: "default",
+                        });
+                    }
+                }
+            } catch {
+                // Silent fail
+            }
+        }
+
+        // Initial check
+        checkFrp();
+
+        // Poll: every 15s if pending, every 60s otherwise
+        const interval = setInterval(checkFrp, frpStatus.status === "pending" ? 15000 : 60000);
+        return () => clearInterval(interval);
+    }, [setFrpStatus, frpStatus.status]);
+
 
     // Keyboard shortcuts
     const handleKeyboard = useCallback(

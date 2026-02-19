@@ -4,6 +4,7 @@ import { useChat } from "@/components/chat/chat-store";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "@/components/providers/theme-provider";
+import { useRouter } from "next/navigation";
 import {
     Plus,
     Search,
@@ -34,6 +35,7 @@ export function Sidebar() {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showThemeMenu, setShowThemeMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
 
     // Close menus on click outside
     useEffect(() => {
@@ -180,7 +182,7 @@ export function Sidebar() {
                             </div>
 
                             <button
-                                onClick={() => { setSettingsOpen(true); setShowUserMenu(false); }}
+                                onClick={() => { router.push("/chat/settings"); setShowUserMenu(false); }}
                                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:opacity-80 rounded-lg"
                                 style={{ color: "var(--text-primary)" }}
                             >
